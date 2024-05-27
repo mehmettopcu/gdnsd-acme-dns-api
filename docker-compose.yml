@@ -6,10 +6,83 @@ services:
     hostname: gdnsd
     container_name: gdnsd
     restart: always
-    network_mode: "bridge"
+    networks:
+      custom_network:
+        ipv4_address: 172.30.0.10
+    dns:
+      - 127.0.0.1
     volumes:
       - ./conf/:/etc/gdnsd/
+      - ./run/gdnsd/:/run/gdnsd/
     build:
       context: .
+      target: gdnsd
       args:
-        GDNS_VER: 3.8.0
+        GDNS_VER: 3.8.2
+
+  gdnsd-api:
+    image: gdnsd-api
+    hostname: gdnsd-api
+    container_name: gdnsd-api
+    restart: always
+    networks:
+      custom_network:
+        ipv4_address: 172.30.0.11
+    dns:
+      - 172.30.0.10
+    volumes:
+      - ./conf/:/etc/gdnsd/
+      - ./run/gdnsd/:/run/gdnsd/
+    environment:
+      - TOKEN=0cb9af673c9af284ba85281053e68820
+    build:
+      context: .
+      target: api
+
+  checkme-1:
+    image: checkme
+    restart: always
+    hostname: checkme-1
+    container_name: checkme-1
+    networks:
+      custom_network:
+        ipv4_address: 172.30.0.4
+    build:
+      context: .
+      target: checkme
+      args:
+        VHOST: www.example.local
+
+  checkme-2:
+    image: checkme
+    restart: always
+    hostname: checkme-2
+    container_name: checkme-2
+    networks:
+      custom_network:
+        ipv4_address: 172.30.0.5
+    build:
+      context: .
+      target: checkme
+      args:
+        VHOST: www.example.local
+
+  checkme-3:
+    image: checkme
+    restart: always
+    hostname: checkme-3
+    container_name: checkme-3
+    networks:
+      custom_network:
+        ipv4_address: 172.30.0.6
+    build:
+      context: .
+      target: checkme
+      args:
+        VHOST: www.example.local
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16

@@ -1,44 +1,116 @@
-# Docker-gdnsd
-Containerized dynamic authoritative DNS server: [gdnsd](http://gdnsd.org/)
+# gdnsd-acme-dns-api
 
-gdnsd is an Authoritative-only DNS server which does geographic (or other sorts of) balancing, redirection, weighting, and service-state-conscious failover at the DNS layer.
+A plugin for gdnsd to automate ACME DNS-01 challenge validation via a lightweight HTTP API.
 
-# Building the container
+## Overview
 
-Clone this repository, go into the directory and run a command like: `docker build --tag gdnsd --build-arg GDNS_VER=3.8.0 .`
+This project provides an HTTP API for automating the DNS-01 challenge validation required for ACME certificate issuance. It integrates with gdnsd, a high-performance, extensible DNS server, allowing for dynamic DNS record updates necessary for the ACME challenge process.
 
-It is mandatory to precise a version number for gdns through the argument **GDNS_VER**.
+## Features
 
-One can also use the docker-compose.yml file provided here: `docker-compose build`
+- **Automated ACME DNS-01 Challenge Handling**: Automatically creates and manages DNS TXT records for ACME challenges.
+- **Seamless Integration with gdnsd**: Works as a plugin within the gdnsd environment, ensuring minimal configuration and setup.
+- **Support for Multiple ACME Clients**: Compatible with various ACME clients to facilitate SSL certificate automation.
+- **High Performance and Reliability**: Leverages gdnsd’s robust architecture for efficient DNS record management.
+- **Security and Access Control**: Ensures secure updates to DNS records, with support for access control mechanisms.
 
-# Using the container
+## Installation
 
-## Normal usage
+### Prerequisites
 
-Use a command like this one:
+- gdnsd installed and configured on your server.
+- An ACME client (e.g., certbot, acme.sh) for certificate requests.
+- Docker to build and run the container.
 
-  `docker run --detach --rm=true --volumes ./my-gdnsd-config/:/etc/gdnsd/ --name=gdnsd --hostname=gdnsd gdnsd`
+### Building the Docker Image
 
-Or use docker-compose:
+1. Clone the repository:
 
-  `docker-compose up -d`
+   ```bash
+   git clone https://github.com/yourusername/gdnsd-acme-dns-api.git
+   cd gdnsd-acme-dns-api
+   ```
 
-## Debugging
+2. Build the Docker image:
 
-Use a command like this one:
+   ```bash
+   docker build --tag gdnsd --build-arg GDNS_VER=3.8.2 .
+   ```
 
-  `docker run -it --rm=true --volumes ./my-gdnsd-config/:/etc/gdnsd/ --name=gdnsd --hostname=gdnsd --entrypoint=sh gdnsd`
+### Running the Docker Container
 
-Or use docker-compose:
+```bash
+docker-compose up
+```
 
-  `docker-compose up`
+## Usage
 
-# Pull the image from Docker cloud
+1. Configure your ACME client to use the gdnsd-acme-dns-api for DNS-01 challenges. For example, with \`acme.sh\`, you might set the DNS API like this:
 
-Each time this repository is updated, Docker Cloud is configured to automatically build it and push it into docker registry.
-Then it is possible to pull this image directly from there:
+   ```bash
+   export GDNSD_API="http://yourserver:8080/acme-dns-01"
+   export GDNSD_TOKEN="0cb9af673c9af284ba85281053e68820"
+   acme.sh --issue --dns dns_gdnsdapi -d yourdomain.com
+   ```
 
-  `docker pull bedis9/gdnsd:latest`
-  `docker tag bedis9/gdnsd:latest gdnsd:latest`
+2. The API expects a JSON payload with the DNS challenge data. Here's an example of a payload:
 
-Link to the Docker repo: [https://hub.docker.com/r/bedis9/gdnsd/](https://hub.docker.com/r/bedis9/gdnsd/)
+   ```json
+   {
+     "yourdomain.com": "challenge-token"
+   }
+   ```
+
+3. The API will handle the creation and removal of the necessary DNS records for the challenge.
+
+## Example API Request
+
+You can test the API using \`curl\`:
+
+```bash
+curl -X POST http://172.20.0.3:8080/acme-dns-01 \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer 0cb9af673c9af284ba85281053e68820" \
+     -d '{
+              "example.local": "0123456789012345678901234567890123456789012"
+         }'
+
+curl -X POST http://172.20.0.3:8080/acme-dns-01-flush \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer 0cb9af673c9af284ba85281053e68820" \
+     -d '{
+              "submit": "true"
+         }'
+```
+
+## Development
+
+### Local Development Setup
+
+1. Ensure Go is installed and set up on your machine.
+2. Clone the repository and navigate to the project directory.
+3. Build and run the Go application:
+
+   ```bash
+   go mod download
+   go build -o app .
+   ./app
+   ```
+
+4. The server will start and listen on port \`8080\` by default.
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit a pull request with your improvements. Ensure your code adheres to the existing style and includes tests where applicable.
+
+## License
+
+This project is licensed under the MIT License. For more information, please see the [LICENSE](LICENSE) file.
+
+## Built on top of
+
+This project is built on top of [Docker-gdnsd](https://github.com/bedis/Docker-gdnsd).
+
+## Contact
+
+For more information or support, please open an issue on the GitHub repository.

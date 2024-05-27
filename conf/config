@@ -5,6 +5,9 @@ options => {
  tcp_timeout => 15
  include_optional_ns => true
  listen => [ 0.0.0.0 ]
+ tcp_control => {
+        0.0.0.0:886 => { chal_ok => true } # allows challenge stuff
+    }
 }
 
 service_types => {
@@ -27,8 +30,8 @@ plugins => {
  simplefo => {
   www.example.local => {
    service_types => [ www.example.local ],
-   primary => 10.0.0.3
-   secondary => 10.0.0.4
+   primary => 172.20.0.4
+   secondary => 172.20.0.5
   }
  }
 }
