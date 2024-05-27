@@ -1,7 +1,5 @@
 options => {
  dns_port => 53
- http_port => 3506
- log_stats => 86400
  tcp_timeout => 15
  include_optional_ns => true
  listen => [ 0.0.0.0 ]
